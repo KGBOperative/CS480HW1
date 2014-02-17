@@ -1,113 +1,12 @@
-#define debug false
-
-#include <iostream>
-#include <vector>
-#include <set>
-#include <memory>
-#include <functional>
-#include <algorithm>
-
-struct board {
-    std::shared_ptr<board> p;
-    std::vector<int> b;
-    int g;
-    int h;
-    int d;
-
-    board() {
-        b = std::vector<int>(9, 0);
-        p = nullptr;
-    }
-
-    board(const board &other) {
-        b = std::vector<int>(other.b.begin(), other.b.end());
-        g = other.g;
-        h = other.h;
-        d = other.d;
-        p = other.p;
-    }
-
-    void copy(const board &other) {
-        b = std::vector<int>(other.b);
-        g = other.g;
-        h = other.h;
-        d = other.d;
-        p = other.p;
-    }
-
-    void init(int *nums) { 
-        g = 0;
-        h = 0;
-        for (int i = 0; i < 9; i++) {
-            b[i] = nums[i];
-        }
-    }
-
-    int &at(int i, int j) {
-        return b[3*i+j];
-    }
-};
-
-// comparison function for board
-bool fn_cmp(const board &l, const board &r) {
-    return l.b < r.b;
-}
-
-// comparison funciton to get the next board
-bool fn_fcmp(const board& l, const board& r) {
-    return l.g + l.h < r.g + r.h;
-}
-
-// hamming distance heuristic
-int h1(board &s, board &g);
-
-// manhattan distance heuristic
-int h2(board &s, board &g);
-
-// A* search algorithm
-void a(board &s, board &g, int d, std::function<int(board&, board&)> &h);
-
-// returns the set of children of the current board
-std::vector<board> children(board &b);
-
-// builds the path from start to final
-void print_path(board &b);
-
-// print the given board to the console
-void print(board &b);
-
-int main() {
-    std::function<int(board&, board&)> fh1 = &h1;
-    std::function<int(board&, board&)> fh2 = &h2;
-
-    // init goal board
-    board g;
-    g.init(new int[9]{ 1, 2, 3, 8, 0, 4, 7, 6, 5 });
-
-    // init start board
-    board s;
-    s.init(new int[9]{ 2, 8, 3, 1, 6, 4, 7, 0, 5 }); 
-
-    std::cout << "starting state:\n";
-    print(s);
-    std::cout << "goal state:\n";
-    print(g);
-
-    std::cout << "A* search with hamming distance hueristic\n";
-    a(s, g, 3, fh1);
-
-    std::cout << "A* search with manhattan distance hueristic\n";
-    a(s, g, 3, fh2);
-
-
-    return 0;
-}
+#include "hw1_2.h"
 
 int h1(board &s, board &g) {
     int h = 0;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (s.at(i,j) != 0 && s.at(i,j) != g.at(i,j)) {
+                // the current tile is not where it should be
+                // add one to the total
                 h++;
             }
         }
@@ -118,16 +17,19 @@ int h1(board &s, board &g) {
 
 int h2(board &s, board &g) {
     int h = 0;
+    // find all non-zero x
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (s.at(i,j) != 0 && s.at(i,j) != g.at(i,j)) {
                 int x = s.at(i,j);
-
+                // find the position that x should be at
                 for (int a = 0; a < 3; a++) {
                     for (int b = 0; b < 3; b++) {
                         if (x == g.at(a,b)) {
                             int di = i - a;
                             int dj = j - b;
+                            // add the manhattan distance of x to it's goal
+                            // position to total
                             h += di < 0 ? -di : di;
                             h += dj < 0 ? -dj : dj;
 
@@ -142,26 +44,35 @@ int h2(board &s, board &g) {
 }
 
 void a(board &s, board &g, int d, std::function<int(board&, board&)> &h) {
-    
+    // the set containing the board states that have already been checked
     std::set<board, bool(*)(const board&, const board&)> closed(&fn_cmp);
+    // the set containing the board states that have yet to be checked
     std::set<board, bool(*)(const board&, const board&)> open(&fn_cmp);
+    // the set containing the board states that have yet to be checked and
+    // have a depth greater than 3
     std::set<board, bool(*)(const board&, const board&)> final_open(&fn_cmp);
 
-    std::vector<board> from;
-
+    // set the distance cost of the start node
     s.g = 0;
+    // set the estimated cost to the goal state using the given funciton h
     s.h = h(s, g);
+    // set the number of remaining node hops to check
     s.d = d;
 
+    // a container for the current board state
     board c;
     open.insert(s);
     while (!open.empty()) {
+        // get the board state from the open set with the smallest f value
         auto curr_it = std::min_element(open.begin(), open.end(), &fn_fcmp);
         c.copy(*curr_it);
         
+        // move the current board state from the open to the closed set
         open.erase(*curr_it);
         closed.insert(c);
 
+        // get the board states for the children of the current board state
+        // check each child state individually
         for (auto n : children(c)) {
             if (debug) {
                 std::cout << "testing n in children c\n";
@@ -169,9 +80,13 @@ void a(board &s, board &g, int d, std::function<int(board&, board&)> &h) {
                 std::cout << std::endl;
             }
 
+            // update the distance from the start state
             n.g++;
+            // update the estimated distance to the goal state
             n.h = h(n, g);
+            // reduce the node depth left to check
             n.d--;
+            // if the current child state is in the closed set, ignore it
             if (closed.find(n) != closed.end()) {
                 if (debug) {
                     std::cout << "found n in closed set\n";
@@ -179,6 +94,8 @@ void a(board &s, board &g, int d, std::function<int(board&, board&)> &h) {
                     std::cout << std::endl;
                 }
                 continue;
+            // if we have gone past the max depth, add the current child to the
+            // final open set
             } else if (n.d < 0 && final_open.find(n) == final_open.end()) {
                 if (debug) {
                     std::cout << "putting n into final_open set\n";
@@ -186,9 +103,10 @@ void a(board &s, board &g, int d, std::function<int(board&, board&)> &h) {
                     std::cout << std::endl;
                 }
                 final_open.insert(n);
-            } else if (open.find(n) == open.end()) {
+            // attempt to add the current child state to the open set
+            } else {
                 if (debug) {
-                    std::cout << "putting n into open set\n";
+                    std::cout << "attempting to put n into open set\n";
                     print(n);
                     std::cout << std::endl;
                 }
@@ -202,19 +120,68 @@ void a(board &s, board &g, int d, std::function<int(board&, board&)> &h) {
         }
     }
 
+    // all states within the max depth have been checked, output the current
+    // search state to the console
+
+    // output the path from the starting state to the current state
     std::cout << "Current path == \n";
     print_path(c);
+
+    // print the board states that have been placed into the closed set
     std::cout << "...\n\nClosed set == \n";
     for (auto b : closed) {
         print(b);
         std::cout << "------\n";
     }
 
+    // print the board states that are past the max depth that the search
+    // algorthm has found but not checked
     std::cout << "\nOpen set == \n";
     for (auto b : final_open) {
         print(b);
         std::cout << "------\n";
     }
+}
+
+board::board() {
+    b = std::vector<int>(9, 0);
+    p = nullptr;
+}
+
+board::board(const board &other) {
+    b = std::vector<int>(other.b.begin(), other.b.end());
+    g = other.g;
+    h = other.h;
+    d = other.d;
+    p = other.p;
+}
+
+void board::copy(const board &other) {
+    b = std::vector<int>(other.b);
+    g = other.g;
+    h = other.h;
+    d = other.d;
+    p = other.p;
+}
+
+void board::init(int *nums) { 
+    g = 0;
+    h = 0;
+    for (int i = 0; i < 9; i++) {
+        b[i] = nums[i];
+    }
+}
+
+int &board::at(int i, int j) {
+    return b[3*i+j];
+}
+
+bool fn_cmp(const board &l, const board &r) {
+    return l.b < r.b;
+}
+
+bool fn_fcmp(const board& l, const board& r) {
+    return l.g + l.h < r.g + r.h;
 }
 
 std::vector<board> children(board &b) {

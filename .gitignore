@@ -1,0 +1,9 @@
+# error output text
+err
+
+# binary output file
+a.star
+
+# c++ object and dependencies
+*.o
+*.d
