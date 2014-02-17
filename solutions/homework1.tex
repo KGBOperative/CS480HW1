@@ -1,0 +1,98 @@
+\documentclass{article}
+
+\usepackage{amsmath,amsthm,amssymb}
+%\usepackage{parskip}
+
+\setlength{\parindent}{0 pt}
+
+\newtheorem{assertion}{Assertion}
+
+\begin{document}
+\title{CS 480 - Homework \#1 Solutions}
+\author{Aman Gill \and Kyle Janssen}
+\date{Spring 2014}
+\maketitle
+
+\subsection*{1) Show the assertions}
+
+\begin{assertion}
+	If $h_{1}(n), h_{2}(n)$ are admissible then $h(n) = max(h_{1}(n), h_{2}(n))$ is admissible.
+\end{assertion}
+
+\begin{proof}
+
+	Let $h_{1}, h_{2}$ describe admissible heuristics. By definition, $h_{1}(n) \leq C(n)$ and $h_{2}(n) \leq C(n)$ where $C(n)$ is the actual cost to get from node $n$ to the goal node. Without loss of generality, assume $h_{1} \leq h_{2}(n)$ for some node $n*$.\\
+
+	if \[h(n) = max(h_{1}(n), h_{2}(n))\]
+	then \[h(n*) = h_{2}(n*)\]
+	since \[h_{2}(n*) \leq C(n*)\]
+
+	\[h(n*) \leq C(n*)\]
+
+	and $h(n)$ is therefore admissible.
+\end{proof}
+
+\begin{assertion}
+	If $h_{1}(n), h_{2}(n)$ are consistent then $h(n) = max(h_{1}(n), h_{2}(n))$ is consistent.
+\end{assertion}
+
+\begin{proof}
+
+	Let $h_{1}, h_{2}$ describe consistent heuristics. By definition,
+
+	\[h_{1}(n_{j}) \leq C(n_{j+1}, n_{j}) + h_{1}(n_{j + 1})\]
+	\[h_{2}(n_{j}) \leq C(n_{j+1}, n_{j}) + h_{2}(n_{j + 1})\]
+
+	where $C(n_{j+1}, n_{j})$ is the cost to get from node $n_{j}$ to $n_{j + 1} $. We will also define
+
+	\[h(n) = max(h_{1}(n_{j}), h_{2}(n_{j}))\]
+
+	There will be two cases: one where one heuristic is greater than both nodes, and one where the greater heuristic switches between nodes.\\
+
+	\emph{Case 1}: Without loss of generality, assume
+	
+	\[h_{1}(n_{j}) \leq h_{2}(n_{j})\]
+	\[h_{1}(n_{j + 1}) \leq h_{2}(n_{j + 1})\]
+	
+	then
+	
+	\[h(n_{j}) = h_{2}(n_{j})\ and\ h(n_{j + 1}) = h_{2}(n_{j + 1})\]
+	
+	Since $h_{2}$ is known to be consistent, $h$ is also consistent.\\
+
+	\emph{Case 2}: Without loss of generality, assume
+		
+		\[h_{1}(n_{j}) \leq h_{2}(n_{j})\]
+		\[h_{2}(n_{j + 1}) \leq h_{1}(n_{j + 1})\]
+		
+		then
+			
+		\[h(n_{j}) = h_{2}(n_{j})\ and\ h(n_{j + 1}) = h_{1}(n_{j + 1})\]
+		
+		additionally,
+		
+		\[C(n_{j+1}, n_{j}) + h_{2}(n_{j + 1}) \leq C(n_{j+1}, n_{j}) + h_{1}(n_{j + 1})\]
+		
+		since $h_{2}$ is consistent,
+		
+		\[h_{2}(n_{j}) \leq C(n_{j+1}, n_{j}) + h_{2}(n_{j + 1}) \leq C(n_{j+1}, n_{j}) + h_{1}(n_{j + 1})\]
+		
+		Therefore, by substitution, h is consistent.\\
+
+\end{proof}
+
+
+\subsection*{2) Exhibit the search tree}
+
+\subsection*{3) Justify a true/false answer}
+
+a) False. For a weighted, directed graph, increasing all of the weights of the edges by some amount $A$ would cause the cost of the shortest path from node $s$ to node $g$ to increase by an amount proportional to the number of steps in that path. If the shortest path is not also the path with the fewest steps and $A$ is of sufficient magnitude, the path with the fewest steps from $s$ to $g$ would become the shortest path.\\
+
+b) True. When best first search is implemented using an admissible heuristic function, it is the A* algorithm, but unless the heuristic function is also consistent, the possibility remains that a node may be discovered more than once and its cost improved.
+
+
+\subsection*{4) Pancake sorting problem}
+
+a) The heuristic function $h(x)$ = 1/2 * the number of breakpoints is admissible. Each step between states costs 1, and each step away from the goal node can increase the number of breakpoints by 2, or $h(x)$ by 1. Because the heuristic and the cost to get to the goal increase at the same rate as we move further from the goal in our state space, $h(x)$ can never overestimate cost, and is therefore admissible.
+
+\end{document}
