@@ -7,3 +7,7 @@ a.star
 # c++ object and dependencies
 *.o
 *.d
+
+# swap files
+*.sw[op]
+*~
